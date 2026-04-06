@@ -1,0 +1,11 @@
+# Extra dependencies to run the Spark version (kedro_like_propensity_pipeline_spark.py)
+#
+# You also need a local Java runtime (JDK/JRE) available on PATH.
+#
+# Note: PySpark version compatibility varies by Python version.
+# If your environment is Python 3.13, you may need to use Python 3.12 (or earlier) for PySpark.
+
+pyspark>=3.5
+pandas
+matplotlib
+numpy

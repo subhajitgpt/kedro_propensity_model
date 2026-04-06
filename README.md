@@ -13,7 +13,9 @@ The main script builds a **synthetic customer dataset**, creates a binary target
 ## Files
 
 - `kedro_like_propensity_pipeline.py` — the pipeline framework + the end-to-end propensity workflow + CLI
+- `kedro_like_propensity_pipeline_spark.py` — Spark / PySpark version of the same Kedro-style flow
 - `requirements.txt` — runtime dependencies
+- `requirements.spark.txt` — extra dependencies for the Spark version
 - `pyproject.toml` — project metadata and dependency ranges
 - `main.py` — placeholder “hello world” entrypoint (not used by the pipeline)
 
@@ -66,6 +68,46 @@ python kedro_like_propensity_pipeline.py --pipeline full
 ```bash
 python kedro_like_propensity_pipeline.py --quiet
 ```
+
+## Spark / PySpark version
+
+This repo also includes a Spark-native pipeline that mirrors the same end-to-end nodes and pipeline names:
+
+- `baseline`: baseline LogisticRegression on a validation split
+- `train`: adds a tuned GBTClassifier + feature importance + top-k selection
+- `full`: scores test, adds deciles, exports leads + metrics, and saves the Spark ML model
+
+### Install Spark deps
+
+```bash
+python -m pip install -r requirements.spark.txt
+```
+
+You also need Java installed (so `java` works in your terminal).
+
+### Run
+
+```bash
+python kedro_like_propensity_pipeline_spark.py --list-pipelines
+python kedro_like_propensity_pipeline_spark.py --pipeline full
+```
+
+Defaults run locally with `--spark-master local[*]`. You can override:
+
+```bash
+python kedro_like_propensity_pipeline_spark.py --pipeline full --spark-master local[4]
+```
+
+### Spark outputs
+
+Spark writes CSV outputs as *folders* (containing a `part-*.csv`):
+
+- `kedro_style_leads_spark_csv/`
+- `kedro_style_performance_metrics_spark_csv/`
+
+And the model is saved as a Spark MLlib folder:
+
+- `kedro_style_model_spark/`
 
 ## Pipelines
 
