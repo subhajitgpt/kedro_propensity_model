@@ -1,0 +1,8 @@
+# Runtime dependencies for kedro_style_propensity_pipeline.py
+numpy
+pandas
+scikit-learn
+catboost
+matplotlib
+
+
