@@ -182,3 +182,22 @@ Defaults are defined in `build_default_catalog()` inside `kedro_like_propensity_
 - The dataset is **synthetic** (generated in `create_customers()`), intended for learning / interview-style practice.
 - CatBoost uses categorical features by index; the script normalizes and string-casts categorical columns before building `Pool` objects.
 
+## Flask UI
+
+This repo includes a simple Flask UI to run the full pipeline and watch logs/artifacts live.
+
+### Run (PowerShell + Anaconda)
+
+If `python` is not found in your terminal, prepend your Anaconda paths first, then start the server:
+
+```powershell
+$env:Path = "C:\ProgramData\anaconda3;C:\ProgramData\anaconda3\Scripts;C:\ProgramData\anaconda3\Library\bin;$env:Path"
+python flask_ui.py
+```
+
+Then open:
+
+- http://127.0.0.1:5000/
+
+If the **Run end-to-end pipeline** button feels “unresponsive”, check the **Logs** panel; the pipeline can take a bit of time (especially the CatBoost training/tuning), but the `/run` request should return immediately and logs should start streaming.
+

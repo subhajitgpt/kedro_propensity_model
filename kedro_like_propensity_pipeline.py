@@ -75,16 +75,37 @@ class Pipeline:
     name: str = "pipeline"
 
 
-def run_pipeline(pipeline: Pipeline, catalog: Catalog, verbose: bool = True) -> Catalog:
+def run_pipeline(
+    pipeline: Pipeline,
+    catalog: Catalog,
+    verbose: bool = True,
+    on_node_start: Optional[Callable[[Dict[str, Any]], None]] = None,
+    on_node_end: Optional[Callable[[Dict[str, Any]], None]] = None,
+    on_node_error: Optional[Callable[[Dict[str, Any]], None]] = None,
+) -> Catalog:
     if verbose:
         print("Running pipeline:", pipeline.name)
 
     node_timings: List[Dict[str, Any]] = []
     pipeline_start = time.time()
-    for node in pipeline.nodes:
+    total_nodes = int(len(pipeline.nodes))
+    for node_idx, node in enumerate(pipeline.nodes):
         in_names = _as_list(node.inputs)
         out_names = _as_list(node.outputs)
         args = [catalog[n] for n in in_names]
+
+        if on_node_start is not None:
+            on_node_start(
+                {
+                    "pipeline": pipeline.name,
+                    "node": str(node.name),
+                    "node_index": int(node_idx),
+                    "node_count": int(total_nodes),
+                    "inputs": list(in_names),
+                    "outputs": list(out_names),
+                    "ts": float(time.time()),
+                }
+            )
 
         if verbose:
             print("")
@@ -95,7 +116,25 @@ def run_pipeline(pipeline: Pipeline, catalog: Catalog, verbose: bool = True) -> 
                 print("  outputs:", out_names)
 
         start = time.time()
-        result = node.func(*args)
+        try:
+            result = node.func(*args)
+        except Exception as e:
+            elapsed = time.time() - start
+            if on_node_error is not None:
+                on_node_error(
+                    {
+                        "pipeline": pipeline.name,
+                        "node": str(node.name),
+                        "node_index": int(node_idx),
+                        "node_count": int(total_nodes),
+                        "inputs": list(in_names),
+                        "outputs": list(out_names),
+                        "seconds": float(elapsed),
+                        "error": repr(e),
+                        "ts": float(time.time()),
+                    }
+                )
+            raise
         elapsed = time.time() - start
 
         node_timings.append(
@@ -123,6 +162,20 @@ def run_pipeline(pipeline: Pipeline, catalog: Catalog, verbose: bool = True) -> 
 
         if verbose:
             print("  done in %.2fs" % elapsed)
+
+        if on_node_end is not None:
+            on_node_end(
+                {
+                    "pipeline": pipeline.name,
+                    "node": str(node.name),
+                    "node_index": int(node_idx),
+                    "node_count": int(total_nodes),
+                    "inputs": list(in_names),
+                    "outputs": list(out_names),
+                    "seconds": float(elapsed),
+                    "ts": float(time.time()),
+                }
+            )
 
     total = time.time() - pipeline_start
     if node_timings:
